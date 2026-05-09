@@ -104,7 +104,7 @@ const (
 	defaultUserTimezone           = "Asia/Shanghai"
 	defaultToolsProfile           = "full"
 	defaultToolsSessionVisibility = "all"
-	maxCommunityAIAgents          = int64(5)
+	maxCommunityAIAgents          = int64(9999)
 	openclawPluginBaseDir         = "/home/node/.openclaw/extensions"
 	openclawPluginPackageTmpDir   = "/tmp/openclaw-plugin"
 	openclawManagedSkillsDir      = "/home/node/.openclaw/skills"
