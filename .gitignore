@@ -66,3 +66,12 @@ AGENTS.md
 opencode.json
 superpowers
 .worktrees/
+
+# Local Electron wake-word demo (large ONNX/WASM from openwakeword-js-setup)
+electron-wake-local/node_modules/
+electron-wake-local/dist/
+electron-wake-local/models/**
+!electron-wake-local/models/README.md
+electron-wake-local/index.html
+electron-wake-local/worker.mjs
+electron-wake-local/openwakeword.mjs

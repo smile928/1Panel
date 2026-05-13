@@ -1,0 +1,25 @@
+{
+  "name": "electron-wake-local",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local openWakeWord (小浪花) + Silero VAD TTS barge-in demo for Electron",
+  "main": "dist/main.js",
+  "scripts": {
+    "prepare-wake": "node scripts/ensure-wake-model.mjs",
+    "build": "node scripts/ensure-wake-model.mjs && esbuild src/main.ts --bundle --platform=node --format=cjs --external:electron --outfile=dist/main.js && esbuild src/preload.ts --bundle --platform=node --format=cjs --external:electron --outfile=dist/preload.js && esbuild src/renderer/renderer.ts --bundle --platform=browser --format=esm --outfile=dist/renderer/bundle.js && cp src/renderer/index.html dist/renderer/index.html && cp src/renderer/pcm-tap-processor.js dist/renderer/pcm-tap-processor.js",
+    "start": "npm run build && electron .",
+    "setup": "npx openwakeword-js-setup && npm run prepare-wake"
+  },
+  "keywords": ["electron", "openWakeWord", "vad", "offline"],
+  "license": "Apache-2.0",
+  "dependencies": {
+    "electron": "^42.0.1",
+    "onnxruntime-web": "^1.24.1",
+    "openwakeword-js": "^0.1.27"
+  },
+  "devDependencies": {
+    "@types/node": "^25.7.0",
+    "esbuild": "^0.28.0",
+    "typescript": "^6.0.3"
+  }
+}

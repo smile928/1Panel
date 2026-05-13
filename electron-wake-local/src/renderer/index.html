@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <title>小浪花唤醒 + VAD 打断</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        margin: 24px;
+        line-height: 1.5;
+        color: #1a1a1a;
+      }
+      h1 {
+        font-size: 1.25rem;
+      }
+      button {
+        margin: 6px 12px 6px 0;
+        padding: 8px 14px;
+        cursor: pointer;
+      }
+      pre#log {
+        background: #f4f4f5;
+        padding: 12px;
+        max-height: 220px;
+        overflow: auto;
+        font-size: 12px;
+      }
+      .row {
+        margin: 8px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>本地唤醒「小浪花，小浪花」+ TTS 时 VAD 打断</h1>
+    <p id="status">初始化中…</p>
+    <div class="row">
+      <button type="button" id="btn-mic">启动麦克风</button>
+      <button type="button" id="btn-tts">播放测试 TTS</button>
+    </div>
+    <div class="row">唤醒分数 <span id="score-wake">—</span> · VAD <span id="score-vad">—</span></div>
+    <pre id="log"></pre>
+    <script type="module" src="./bundle.js"></script>
+  </body>
+</html>
