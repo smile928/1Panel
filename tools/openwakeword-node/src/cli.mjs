@@ -1,21 +1,34 @@
 #!/usr/bin/env node
 /**
- * CLI for streaming openWakeWord scores from Node.js via a Python ONNX worker.
+ * Pure Node.js openWakeWord-style wake detection (onnxruntime-node + upstream ONNX models).
  *
- * Examples:
  *   npm run setup
  *   node src/cli.mjs --models hey_rhasspy_v0.1 --wav recording.wav
  *   ffmpeg -f alsa -i default -f s16le -ac 1 -ar 16000 - | node src/cli.mjs --models hey_rhasspy_v0.1 --stdin
  */
 
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { WakeWordDetector } from './detector.mjs';
 import { readWavPcmS16le, stereoToMonoS16le } from './wav-pcm.mjs';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const defaultModelsDir = path.join(__dirname, '..', 'models');
+
 function parseArgs(argv) {
-  const out = { models: [], vad: 0, trigger: 0.5, wav: null, stdin: false, mic: false };
+  const out = {
+    models: [],
+    modelsDir: defaultModelsDir,
+    vad: 0,
+    trigger: 0.5,
+    wav: null,
+    stdin: false,
+    mic: false,
+  };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--models' && argv[i + 1]) out.models = argv[++i].split(',').map((s) => s.trim()).filter(Boolean);
+    else if (a === '--models-dir' && argv[i + 1]) out.modelsDir = path.resolve(argv[++i]);
     else if (a === '--vad' && argv[i + 1]) out.vad = Number(argv[++i]);
     else if (a === '--trigger' && argv[i + 1]) out.trigger = Number(argv[++i]);
     else if (a === '--wav' && argv[i + 1]) out.wav = argv[++i];
@@ -36,30 +49,29 @@ function pcmMustBe16kMono(pcm, sampleRate, channels) {
 
 async function pumpStdin(det) {
   for await (const chunk of process.stdin) {
-    det.write(chunk);
+    await det.write(chunk);
   }
-  det.end();
 }
 
-function pumpBuffer(det, buf) {
+async function pumpBuffer(det, buf) {
   const chunk = 4096;
   for (let i = 0; i < buf.length; i += chunk) {
-    det.write(buf.subarray(i, Math.min(i + chunk, buf.length)));
+    await det.write(buf.subarray(i, Math.min(i + chunk, buf.length)));
   }
-  det.end();
 }
 
 async function main() {
   const opts = parseArgs(process.argv);
   if (!opts.models.length) {
     console.error(
-      'usage: node src/cli.mjs --models <name[,name2]> [--vad 0.5] [--trigger 0.6] (--wav file.wav | --stdin | --mic)',
+      'usage: node src/cli.mjs --models <name[,name2]> [--models-dir DIR] [--vad 0.5] [--trigger 0.6] (--wav file.wav | --stdin | --mic)',
     );
     process.exit(2);
   }
 
   const det = new WakeWordDetector({
-    models: opts.models,
+    modelsDir: opts.modelsDir,
+    wakewordBasenames: opts.models,
     vadThreshold: opts.vad,
   });
 
@@ -79,12 +91,12 @@ async function main() {
     console.error(err);
   });
 
-  det.start();
+  await det.start();
 
   if (opts.wav) {
     const { sampleRate, channels, pcm } = readWavPcmS16le(opts.wav);
     const mono = pcmMustBe16kMono(pcm, sampleRate, channels);
-    pumpBuffer(det, mono);
+    await pumpBuffer(det, mono);
   } else if (opts.stdin || !process.stdin.isTTY) {
     await pumpStdin(det);
   } else if (opts.mic) {
@@ -113,16 +125,13 @@ async function main() {
     ff.on('error', (e) => {
       console.error(e.message);
       console.error('Tip: install ffmpeg + ALSA, or use --stdin and pipe audio yourself.');
-      det.kill();
       process.exit(1);
     });
     for await (const chunk of ff.stdout) {
-      det.write(chunk);
+      await det.write(chunk);
     }
-    det.end();
   } else {
     console.error('Provide --wav, --stdin, or --mic');
-    det.kill();
     process.exit(2);
   }
 }
